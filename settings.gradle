@@ -1,0 +1,1 @@
+include ':prodmapper-sample', ':prodmapper-annotation', ':prodmapper-compiler', ':prodmapper'
