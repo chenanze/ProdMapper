@@ -7,25 +7,25 @@ import com.chenanze.prodmapper.BindType;
  */
 @BindType(Test1.class)
 public class Test1Entity {
-    String test3;
-    int test4;
+    public String test3;
+    public int test4;
 
     public Test1Entity(String test3, int test4) {
         this.test3 = test3;
         this.test4 = test4;
     }
 
-    public String getTest3() {
-        return test3;
-    }
+//    public String getTest3() {
+//        return test3;
+//    }
 
     public void setTest3(String test3) {
         this.test3 = test3;
     }
 
-    public int getTest4() {
-        return test4;
-    }
+//    public int getTest4() {
+//        return test4;
+//    }
 
     public void setTest4(int test4) {
         this.test4 = test4;

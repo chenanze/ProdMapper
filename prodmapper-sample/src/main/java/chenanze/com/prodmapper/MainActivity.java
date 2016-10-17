@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
+import com.prodmapper.Test3EntityTest3;
 import com.prodmapper.TestEntity__Test$$MapperBind;
 
 public class MainActivity extends AppCompatActivity {
@@ -21,9 +22,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         testRunningTime();
 
-//        Test3 test3 = new Test3Test3Entity().transform(new Test3Entity("test3", 1, 1));
-        Test3 test3 = (Test3) Prodmapper.transfrom(new Test3Entity("test5", 3, 2));
+        Test3 test3;
+        test3 = Test3EntityTest3.transform(new Test3Entity("test3", 3, 2));
+
         Log.d(TAG, "test3: " + test3);
+        test3 = (Test3) Prodmapper.transfrom(new Test3Entity("test5", 3, 2));
+        Log.d(TAG, "test3: " + test3);
+
+        Test4 test4 = (Test4)Prodmapper.transfrom(new Test4Entity(1, "1", 1, 1, false, 0.0f, 0.0d, '1'));
+
+        Log.d(TAG, "test4: " + test4);
     }
 
     private void testRunningTime() {
@@ -32,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
         long count = 10000;
         t1 = System.currentTimeMillis();
         for (int i = 0; i < count; i++) {
-            Test hello3 = new TestEntity__Test$$MapperBind().transform(new TestEntity("hello1", 1));
+            Test hello3 = TestEntity__Test$$MapperBind.transform(new TestEntity("hello1", 1));
         }
         t2 = System.currentTimeMillis();
         Log.d(TAG, "1 running time : " + (t2 - t1));

@@ -44,7 +44,7 @@ public class ProdmapperProcessor extends AbstractProcessor {
         mElementUtils = processingEnv.getElementUtils();
         mMessager = processingEnv.getMessager();
         Log.init(mMessager);
-        Log.setLogStatus(Log.LOG_STATUS.RELEASE);
+        Log.setLogStatus(Log.LOG_STATUS.DEVELOP);
     }
 
     @Override

@@ -5,5 +5,5 @@ package chenanze.com.prodmapper;
  */
 
 public interface ValueBinder<T,V> {
-    T transform(V originObject);
+    T transformInto(V originObject);
 }

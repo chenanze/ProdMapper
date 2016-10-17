@@ -56,9 +56,9 @@ public class Prodmapper {
             if (result == null) {
                 ValueBinder valueBinder = (ValueBinder) Class.forName(proxyClassFullName).newInstance();
                 mValueBinderMapper.put(proxyClassFullName, valueBinder);
-                return valueBinder.transform(originObject);
+                return valueBinder.transformInto(originObject);
             }
-            return result.transform(originObject);
+            return result.transformInto(originObject);
 //            Log.d(TAG, "BindClassName: " + valueBinder.getClass().getSimpleName());
         } catch (ClassNotFoundException e) {
             e.printStackTrace();

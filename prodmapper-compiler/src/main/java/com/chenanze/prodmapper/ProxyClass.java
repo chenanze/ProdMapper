@@ -7,6 +7,9 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,7 +17,11 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
+
+import static com.chenanze.prodmapper.ProxyClass.ConstructorParameterState.FILED;
+import static com.chenanze.prodmapper.ProxyClass.ConstructorParameterState.GET_METHOD;
 
 /**
  * Created by duian on 2016/10/11.
@@ -42,6 +49,12 @@ public class ProxyClass {
 
     private final String mCustomProxyClassNameString;
 
+    private Map<String, ConstructorParameterState> mConsturctorParameterStatesMap = new LinkedHashMap<>();
+
+    enum ConstructorParameterState {
+        FILED, GET_METHOD
+    }
+
     public ProxyClass(TypeElement orginTypeElement, String customProxyClassNameString) {
         mOriginTypeElement = orginTypeElement;
         mCustomProxyClassNameString = customProxyClassNameString;
@@ -68,29 +81,94 @@ public class ProxyClass {
         builder.addSuperinterface(
                 ParameterizedTypeName.get(ClassName.get("chenanze.com.prodmapper", "ValueBinder"), mTargetClassName, mOriginClassName));
 
-        MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("transform");
+        checkIsConstructorParameterMatched();
 
-        String originObject = getVariableName(mOriginTypeElement);
-
-        methodBuilder.addModifiers(Modifier.PUBLIC)
-                .addParameter(mOriginClassName, originObject)
-                .returns(mTargetClassName);
-
-//        ElementFilter.constructorsIn(mTargetTypeElement.getEnclosedElements());
-
-        StringBuilder parameters = new StringBuilder();
-        for (VariableElement variableElement : mConstructorElement.getParameters()) {
-            parameters.append(originObject + "." + getGetAttributeMethod(getMethodParameter(variableElement)) + ",");
-        }
-        parameters.deleteCharAt(parameters.length() - 1);
-
-        methodBuilder.addStatement("return new $T(" + parameters + ")", mTargetClassName);
-
-        builder.addMethod(methodBuilder.build());
+        createStaticTransformMethod(builder);
+        createTransformIntoMethod(builder);
 
         return JavaFile.builder(PACKAGE_NAME, builder.build())
                 .addFileComment("Generated code from ProdMapper. Do not modify!")
                 .build();
+    }
+
+    private void checkIsConstructorParameterMatched() {
+
+        List<ExecutableElement> originMethodElements = ElementFilter.methodsIn(mOriginTypeElement.getEnclosedElements());
+        List<VariableElement> orginFiledElements = ElementFilter.fieldsIn(mOriginTypeElement.getEnclosedElements());
+
+        for (VariableElement parameter : mConstructorElement.getParameters()) {
+            boolean isMatched = false;
+            // Check the parameter of the constructor of target class if have the map get method in origin class to match it.
+            // If matched, save the state to GET_METHOD.
+            for (ExecutableElement methodElement : originMethodElements) {
+                String constructorParameterName = getGetAttributeMethod(getMethodParameter(parameter));
+                Log.printLog("constructorParameterName: " + constructorParameterName + " methodElement: " + methodElement.getSimpleName() + "()");
+                if (getGetAttributeMethod(getMethodParameter(parameter)).equals(methodElement.getSimpleName() + "()")) {
+                    isMatched = true;
+                    mConsturctorParameterStatesMap.put(parameter.getSimpleName().toString(), GET_METHOD);
+                    break;
+                }
+            }
+            Log.printLog("Save the status of parameter: " + parameter.getSimpleName() + " to GET_METHOD");
+            if (isMatched) continue;
+            // Check the parameter of the constructor of target class if have the map fields in origin class to match it.
+            // If matched, save the state to FIELDS.
+            for (VariableElement orginFiledElement : orginFiledElements) {
+                Log.printLog("constructorParameterName: " + parameter.getSimpleName().toString() + " orginFiledElement: " + orginFiledElement.getSimpleName().toString());
+                if (!orginFiledElement.getModifiers().contains(Modifier.PUBLIC)) {
+                    String errorMessage = "Please make true the type of access of the field of " + orginFiledElement.getSimpleName()+" in " + getClassName(mOriginTypeElement) + " is public ";
+                    Log.printError(errorMessage);
+                    throw new RuntimeException(errorMessage);
+                }
+                if (parameter.getSimpleName().toString().equals(orginFiledElement.getSimpleName().toString())) {
+
+                    isMatched = true;
+                    mConsturctorParameterStatesMap.put(parameter.getSimpleName().toString(), FILED);
+                    break;
+                }
+            }
+            Log.printLog("Save the status of parameter: " + parameter.getSimpleName() + " to FIELDS.");
+            // If not matched, throw exception and show error message.
+            if (!isMatched) {
+                String errorMessage = "The parameter " + parameter.getSimpleName() + " of constructor " + mConstructorElement.toString() + " can not find the Get Method to match it.";
+                Log.printError(errorMessage);
+                throw new RuntimeException(errorMessage);
+            }
+        }
+        Log.printLog("checkIsConstructorParameterMatched ok");
+    }
+
+    private void createTransformIntoMethod(TypeSpec.Builder builder) {
+        MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("transformInto");
+        createTransformMethod(builder, methodBuilder);
+    }
+
+    private void createStaticTransformMethod(TypeSpec.Builder builder) {
+        MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("transform");
+        methodBuilder.addModifiers(Modifier.STATIC);
+        createTransformMethod(builder, methodBuilder);
+    }
+
+    private void createTransformMethod(TypeSpec.Builder builder, MethodSpec.Builder methodBuilder) {
+        String originObject = getVariableName(mOriginTypeElement);
+        methodBuilder.addModifiers(Modifier.PUBLIC)
+                .addParameter(mOriginClassName, originObject)
+                .returns(mTargetClassName);
+        StringBuilder parameters = new StringBuilder();
+        for (VariableElement variableElement : mConstructorElement.getParameters()) {
+            ConstructorParameterState constructorParameterState = mConsturctorParameterStatesMap.get(variableElement.getSimpleName().toString());
+            switch (constructorParameterState) {
+                case FILED:
+                    parameters.append(originObject + "." + variableElement.getSimpleName() + ",");
+                    break;
+                case GET_METHOD:
+                    parameters.append(originObject + "." + getGetAttributeMethod(getMethodParameter(variableElement)) + ",");
+                    break;
+            }
+        }
+        parameters.deleteCharAt(parameters.length() - 1);
+        methodBuilder.addStatement("return new $T(" + parameters + ")", mTargetClassName);
+        builder.addMethod(methodBuilder.build());
     }
 
     private String parseCustomProxyClassName(String originClassName, String targetClassName) {
@@ -186,7 +264,7 @@ public class ProxyClass {
 
     public boolean checkIsProcessCorrect(String targetClassName) {
         if (mConstructorElement == null) {
-            Log.printWarning("Target Class: " + targetClassName + " should have a @Construction annotate in it's constructor." );
+            Log.printWarning("Target Class: " + targetClassName + " should have a @Construction annotate in it's constructor.");
             return false;
         }
         return true;
