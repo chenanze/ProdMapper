@@ -15,11 +15,19 @@ public class TabEntity {
         return Datas;
     }
 
+    public TabEntity(List<DatasBean> datas) {
+        Datas = datas;
+    }
+
     public void setDatas(List<DatasBean> Datas) {
         this.Datas = Datas;
     }
 
     public static class DatasBean {
+        public DatasBean(List<ProjTabBean> proj_tab) {
+            this.proj_tab = proj_tab;
+        }
+
         /**
          * iconFileName : 预警报警
          * iconFileUrlLink : 5bf6dfb1-c973-4444-815c-09c24b3ed195.png
@@ -31,6 +39,8 @@ public class TabEntity {
          * remark :
          */
 
+
+
         private List<ProjTabBean> proj_tab;
 
         public List<ProjTabBean> getProj_tab() {
@@ -41,18 +51,31 @@ public class TabEntity {
             this.proj_tab = proj_tab;
         }
 
-        @BindType(Tab.class)
+        @BindType(value = Tab.class,proxyClassName = "$O$T")
         public static class ProjTabBean {
             private String iconFileName;
             private String iconFileUrlLink;
             private String actionMode;
             private String actionParam;
             private String id;
-            public boolean isEnable;
+            private boolean isEnable;
             private String name;
             private int orderno;
             private String project_id;
             private String remark;
+
+            public ProjTabBean(String iconFileName, String iconFileUrlLink, String actionMode, String actionParam, String id, boolean isEnable, String name, int orderno, String project_id, String remark) {
+                this.iconFileName = iconFileName;
+                this.iconFileUrlLink = iconFileUrlLink;
+                this.actionMode = actionMode;
+                this.actionParam = actionParam;
+                this.id = id;
+                this.isEnable = isEnable;
+                this.name = name;
+                this.orderno = orderno;
+                this.project_id = project_id;
+                this.remark = remark;
+            }
 
             public String getIconFileName() {
                 return iconFileName;
@@ -94,7 +117,7 @@ public class TabEntity {
                 this.id = id;
             }
 
-            private boolean getIsEnable() {
+            public boolean getIsEnable() {
                 return isEnable;
             }
 

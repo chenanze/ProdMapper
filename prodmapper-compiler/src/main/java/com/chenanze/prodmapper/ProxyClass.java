@@ -2,6 +2,8 @@ package com.chenanze.prodmapper;
 
 import com.chenanze.prodmapper.utils.LinkedListStack;
 import com.chenanze.prodmapper.utils.Log;
+import com.chenanze.prodmapper.utils.OriginClassAccessStatus;
+import com.chenanze.prodmapper.utils.OriginClassAccessStatus.AccessStatus;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -9,10 +11,12 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,6 +30,7 @@ import javax.lang.model.util.Elements;
 
 import static com.chenanze.prodmapper.ProxyClass.ConstructorParameterState.FILED;
 import static com.chenanze.prodmapper.ProxyClass.ConstructorParameterState.GET_METHOD;
+import static com.chenanze.prodmapper.utils.OriginClassAccessStatus.ElementType;
 
 /**
  * Created by duian on 2016/10/11.
@@ -61,6 +66,9 @@ public class ProxyClass {
 
     private String mPackageName;
     private ParameterizedTypeName mTargetArrayListClassName;
+    private List<OriginClassAccessStatus> mOriginClassAccessStatusList;
+    private boolean mIsInnerClass = false;
+    private TypeElement mTopParentTypeElement;
 
     enum ConstructorParameterState {
         FILED, GET_METHOD
@@ -84,6 +92,8 @@ public class ProxyClass {
         // Recursion it self and analyse the origin element status.
         dealInnerClassList(mOriginTypeElement);
 
+        checkIsInnerClass(mLinkedListStack);
+
         if (!mCustomProxyClassNameString.equals("NONE")) {
             mProxyClassNameString = parseCustomProxyClassName(getClassName(mOriginTypeElement), getClassName(mTargetTypeElement));
         } else {
@@ -97,7 +107,7 @@ public class ProxyClass {
                 .addModifiers()
                 .addModifiers(Modifier.PUBLIC);
 
-        if (mLinkedListStack.size() == 0) {
+        if (!mIsInnerClass) {
             builder.addSuperinterface(ParameterizedTypeName.get(ClassName.get("chenanze.com.prodmapper", "ValueBinder"), mTargetClassName, mOriginClassName));
         } else {
             ClassName list = ClassName.get("java.util", "List");
@@ -120,6 +130,14 @@ public class ProxyClass {
                 .build();
     }
 
+    private void checkIsInnerClass(LinkedListStack<Node> mLinkedListStack) {
+        if (mLinkedListStack.size() == 0) {
+            mIsInnerClass = false;
+        } else {
+            mIsInnerClass = true;
+        }
+    }
+
     /**
      * Recursion it self and analyse the origin element status.
      *
@@ -132,6 +150,7 @@ public class ProxyClass {
         // Push the top element to stack.
         if (parentElement.toString().equals(mPackageName)) {
 //            List<VariableElement> parentVariableElements = ElementFilter.fieldsIn(parentElement.getEnclosedElements());
+            mTopParentTypeElement = originTypeElement;
             mLinkedListStack.push(new Node(getVariableName(originTypeElement), getTypeName(originTypeElement), true));
             return;
         }
@@ -209,6 +228,17 @@ public class ProxyClass {
         dealInnerClassList(parentTypeElement);
     }
 
+    private void collectionElementModifiersInfo(OriginClassAccessStatus originClassAccessStatus, Element element) {
+        Set<Modifier> modifiers = element.getModifiers();
+        if (modifiers.contains(Modifier.PRIVATE)) {
+            originClassAccessStatus.setAccessStatus(AccessStatus.PRIVATE);
+        } else if (modifiers.contains(Modifier.PUBLIC)) {
+            originClassAccessStatus.setAccessStatus(AccessStatus.PUBLIC);
+        } else if (modifiers.contains(Modifier.PROTECTED)) {
+            originClassAccessStatus.setAccessStatus(AccessStatus.PROTECTED);
+        }
+    }
+
     private boolean checkElementModifiers(Element element, Modifier modifier) {
         switch (modifier) {
             case PRIVATE:
@@ -238,9 +268,10 @@ public class ProxyClass {
 
         List<ExecutableElement> originMethodElements = ElementFilter.methodsIn(mOriginTypeElement.getEnclosedElements());
         List<VariableElement> orginFiledElements = ElementFilter.fieldsIn(mOriginTypeElement.getEnclosedElements());
-
+        mOriginClassAccessStatusList = new ArrayList<>();
         for (VariableElement parameter : mConstructorElement.getParameters()) {
-            boolean isMatched = false;
+//            boolean isMatched = false;
+            OriginClassAccessStatus originClassAccessStatus = new OriginClassAccessStatus();
             // Check the parameter of the constructor of target class if have the map get method in origin class to match it.
             // If matched, save the state to GET_METHOD.
             for (ExecutableElement methodElement : originMethodElements) {
@@ -248,38 +279,67 @@ public class ProxyClass {
                 String constructorParameterName = getGetAttributeMethod(getMethodParameter(parameter));
                 Log.printLog("constructorParameterName: " + constructorParameterName + " methodElement: " + methodElement.getSimpleName() + "()");
                 if (getGetAttributeMethod(getMethodParameter(parameter)).equals(methodElement.getSimpleName() + "()")) {
-                    isMatched = true;
+
+                    originClassAccessStatus.setElement(methodElement);
+                    originClassAccessStatus.setElementType(ElementType.METHOD);
+                    collectionElementModifiersInfo(originClassAccessStatus, methodElement);
+                    originClassAccessStatus.setIsGetMethodNameMatched(true);
                     mConsturctorParameterStatesMap.put(parameter.getSimpleName().toString(), GET_METHOD);
                     break;
                 }
             }
             Log.printLog("Save the status of parameter: " + parameter.getSimpleName() + " to GET_METHOD");
-            if (isMatched) continue;
+            if (originClassAccessStatus.isAccessAble()) continue;
             // Check the parameter of the constructor of target class if have the map fields in origin class to match it.
             // If matched, save the state to FIELDS.
             for (VariableElement orginFiledElement : orginFiledElements) {
                 Log.printLog("constructorParameterName: " + parameter.getSimpleName().toString() + " orginFiledElement: " + orginFiledElement.getSimpleName().toString());
-                checkElementModifiers(orginFiledElement, Modifier.PUBLIC);
-//                if (!orginFiledElement.getModifiers().contains(Modifier.PUBLIC)) {
-//                    String errorMessage = "Please make true the type of access of the field of " + orginFiledElement.getSimpleName() + " in " + getClassName(mOriginTypeElement) + " is public ";
-//                    Log.printError(errorMessage);
-//                    throw new RuntimeException(errorMessage);
-//                }
                 if (parameter.getSimpleName().toString().equals(orginFiledElement.getSimpleName().toString())) {
-                    isMatched = true;
+
+                    originClassAccessStatus.setElement(orginFiledElement);
+                    collectionElementModifiersInfo(originClassAccessStatus, orginFiledElement);
+                    originClassAccessStatus.setElementType(ElementType.PARAMETER);
+                    originClassAccessStatus.setIsParameterNameMatched(true);
                     mConsturctorParameterStatesMap.put(parameter.getSimpleName().toString(), FILED);
                     break;
                 }
             }
             Log.printLog("Save the status of parameter: " + parameter.getSimpleName() + " to FIELDS.");
             // If not matched, throw exception and show error message.
-            if (!isMatched) {
-                String errorMessage = "The parameter " + parameter.getSimpleName() + " of constructor " + mConstructorElement.toString() + " can not find the Get Method to match it.";
-                Log.printError(errorMessage);
-                throw new RuntimeException(errorMessage);
+            if (!originClassAccessStatus.isAccessAble()) {
+                dealConstructorParameterError(originClassAccessStatus, parameter);
             }
         }
         Log.printLog("checkIsConstructorParameterMatched ok");
+    }
+
+    private void dealConstructorParameterError(OriginClassAccessStatus originClassAccessStatus, VariableElement constructorParameter) {
+        if (originClassAccessStatus.getElement() == null)
+            printThrowError("The parameter: " + constructorParameter + " of constructor " + mConstructorElement.toString() + " can not find the get method or field to match it."
+                    + "\nPlease make sure the get method name or field name for constructor parameter: " + constructorParameter + " is correct");
+
+        if (originClassAccessStatus.isGetMethodNameMatched())
+            printThrowError("Please make sure the access of get method: " + originClassAccessStatus.getElement().getSimpleName() + " in origin class: " + mOriginTypeElement.toString() + " is public");
+        else
+            printThrowError("The parameter: " + originClassAccessStatus.getElement().getSimpleName() + " of constructor " + mConstructorElement.toString() + " can not find the Get Method to match it."
+                    + "\nPlease make sure the get method name for constructor parameter: " + originClassAccessStatus.getElement().getSimpleName() + " is correct");
+
+        if (originClassAccessStatus.isIsParameterMatched())
+            printThrowError("Please make sure the access of fields: " + originClassAccessStatus.getElement().getSimpleName() + " in origin class: " + mOriginTypeElement.toString() + " is public");
+        else
+            printThrowError("The parameter: " + originClassAccessStatus.getElement().getSimpleName() + " of constructor " + mConstructorElement.toString() + " can not find the field to match it."
+                    + "\nPlease make sure the field name for constructor parameter: " + originClassAccessStatus.getElement().getSimpleName() + " is correct");
+
+        printThrowError("The parameter: " + originClassAccessStatus.getElement().getSimpleName() + " of constructor " + mConstructorElement.toString() + " can not find the get method or field to match it."
+                + "\nPlease make sure the get method name or field name for constructor parameter: " + originClassAccessStatus.getElement().getSimpleName() + " is correct");
+    }
+
+    public void printThrowError(String errorMessage) {
+        if (errorMessage == null) {
+            Log.printError("printThrowError == null");
+        }
+        Log.printError(errorMessage);
+        throw new RuntimeException(errorMessage);
     }
 
     private void createTransformIntoMethod(TypeSpec.Builder builder) {
@@ -322,7 +382,7 @@ public class ProxyClass {
     }
 
     private void createStaticTransformListMethod(TypeSpec.Builder builder) {
-        MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("transforms");
+        MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("transform");
         methodBuilder.addModifiers(Modifier.STATIC);
         createTransformListMethod(builder, methodBuilder);
     }

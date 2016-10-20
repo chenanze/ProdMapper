@@ -4,10 +4,10 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
-import com.prodmapper.TestSubBeanTest3;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import chenanze.com.prodmapper.TabEntity.DatasBean;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -42,9 +42,37 @@ public class MainActivity extends AppCompatActivity {
         testBeanList.add(new Test3Entity.TestBean("1", 1, testSubBeanList));
         testBeanList.add(new Test3Entity.TestBean("2", 2, testSubBeanList1));
 //        List<Test3> test3List = Test3EntityTest3Mapper.transform(new Test3Entity("0", 0, 0, testBeanList));
-        List<Test3> test3List = TestSubBeanTest3.transforms(new Test3Entity("0", 0, 0, testBeanList));
-//        List<Test3> test3List = (List<Test3>) Prodmapper.transfroms(new Test3Entity("0", 0, 0, testBeanList), Test3Entity.TestBean.TestSubBean.class);
-        Log.d(TAG, "test3: " + test3List);
+//        List<Test3> test3List = TestSubBeanTest3.transforms(new Test3Entity("0", 0, 0, testBeanList));
+
+        TabEntity tabEntity = new TabEntity(
+                new ArrayList<DatasBean>() {{
+                    add(new DatasBean(
+                            new ArrayList<DatasBean.ProjTabBean>() {{
+                                add(new DatasBean.ProjTabBean("iconFileName", "iconFileUrlLink", "actionMode", "actionParam", "id", false, "TestName", 0, "0", "remark"));
+                                add(new DatasBean.ProjTabBean("iconFileName1", "iconFileUrlLink1", "actionMode1", "actionParam1", "id1", false, "TestName1", 1, "1", "remark1"));
+                                add(new DatasBean.ProjTabBean("iconFileName2", "iconFileUrlLink2", "actionMode2", "actionParam2", "id2", false, "TestName2", 2, "2", "remark2"));
+                                add(new DatasBean.ProjTabBean("iconFileName3", "iconFileUrlLink3", "actionMode3", "actionParam3", "id3", false, "TestName3", 3, "3", "remark3"));
+                            }}));
+                    add(new DatasBean(
+                            new ArrayList<DatasBean.ProjTabBean>() {{
+                                add(new DatasBean.ProjTabBean("iconFileName4", "iconFileUrlLink4", "actionMode4", "actionParam4", "id4", false, "TestName4", 4, "4", "remark4"));
+                                add(new DatasBean.ProjTabBean("iconFileName5", "iconFileUrlLink5", "actionMode5", "actionParam5", "id5", false, "TestName5", 5, "5", "remark5"));
+                                add(new DatasBean.ProjTabBean("iconFileName6", "iconFileUrlLink6", "actionMode6", "actionParam6", "id6", false, "TestName6", 6, "6", "remark6"));
+                                add(new DatasBean.ProjTabBean("iconFileName7", "iconFileUrlLink7", "actionMode7", "actionParam7", "id7", false, "TestName7", 7, "7", "remark7"));
+                            }}));
+                    add(new DatasBean(
+                            new ArrayList<DatasBean.ProjTabBean>() {{
+                                add(new DatasBean.ProjTabBean("iconFileName8", "iconFileUrlLink8", "actionMode8", "actionParam8", "id8", false, "TestName8", 8, "8", "remark8"));
+                                add(new DatasBean.ProjTabBean("iconFileName9", "iconFileUrlLink9", "actionMode9", "actionParam9", "id9", false, "TestName9", 9, "9", "remark9"));
+                                add(new DatasBean.ProjTabBean("iconFileName10", "iconFileUrlLink10", "actionMode10", "actionParam10", "id10", false, "TestName10", 10, "10", "remark10"));
+                                add(new DatasBean.ProjTabBean("iconFileName11", "iconFileUrlLink11", "actionMode11", "actionParam11", "id11", false, "TestName11", 11, "11", "remark11"));
+                            }}));
+                }});
+
+        List<Tab> tabList = (List<Tab>) Prodmapper.transfroms(tabEntity, TabEntity.DatasBean.ProjTabBean.class);
+//        List<Tab> tabList = ProjTabBean__Tab$$MapperBind.transform(tabEntity);
+
+        Log.d(TAG, "tabList: " + tabList);
 
 //        for (Test3 tes3 : test3List) {
 //            Log.d(TAG, "test3: " + tes3.toString());
