@@ -7,35 +7,20 @@ import com.chenanze.prodmapper.Construction;
  */
 public class Test3 {
 
-    String test3String;
-    int test3Int;
-    Integer test3Integer;
+    public String testSubBeanString;
+    public int testSubBeanInt;
 
     @Construction
-    public Test3(String test3String, int test3Int, Integer test3Integer) {
-        this.test3String = test3String;
-        this.test3Int = test3Int;
-        this.test3Integer = test3Integer;
-    }
-
-    public String getTest3String() {
-        return test3String;
-    }
-
-    public int getTest3Int() {
-        return test3Int;
-    }
-
-    public Integer getTest3Integer() {
-        return test3Integer;
+    public Test3(String testSubBeanString, int testSubBeanInt) {
+        this.testSubBeanString = testSubBeanString;
+        this.testSubBeanInt = testSubBeanInt;
     }
 
     @Override
     public String toString() {
         return "Test3{" +
-                "test3String='" + test3String + '\'' +
-                ", test3Int=" + test3Int +
-                ", test3Integer=" + test3Integer +
+                "testSubBeanString='" + testSubBeanString + '\'' +
+                ", testSubBeanInt=" + testSubBeanInt +
                 '}';
     }
 }

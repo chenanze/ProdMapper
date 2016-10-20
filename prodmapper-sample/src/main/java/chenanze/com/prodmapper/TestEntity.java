@@ -1,11 +1,9 @@
 package chenanze.com.prodmapper;
 
-import com.chenanze.prodmapper.BindType;
-
 /**
  * Created by duian on 2016/10/11.
  */
-@BindType(Test.class)
+//@BindType(Test.class)
 public class TestEntity {
     public String test1;
     public int test2;

@@ -1,7 +1,5 @@
 package chenanze.com.prodmapper;
 
-import com.chenanze.prodmapper.Construction;
-
 /**
  * Created by duian on 2016/10/17.
  */
@@ -16,7 +14,7 @@ public class Test4 {
     public double test4Double;
     public char test4Char;
 
-    @Construction
+//    @Construction
     public Test4(int test4Int, String test4String, Integer test4Integer, long test4Long, boolean test4Boolean, float test4Float, double test4Double, char test4Char) {
         this.test4Int = test4Int;
         this.test4String = test4String;

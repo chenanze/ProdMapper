@@ -1,11 +1,9 @@
 package chenanze.com.prodmapper;
 
-import com.chenanze.prodmapper.BindType;
-
 /**
  * Created by duian on 2016/10/17.
  */
-@BindType(Test4.class)
+//@BindType(Test4.class)
 public class Test4Entity {
     public int test4Int;
     public String test4String;

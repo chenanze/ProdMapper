@@ -1,7 +1,5 @@
 package chenanze.com.prodmapper;
 
-import com.chenanze.prodmapper.Construction;
-
 /**
  * Created by duian on 2016/10/11.
  */
@@ -12,7 +10,7 @@ public class Test1 {
     int mTest4;
 
 
-    @Construction
+//    @Construction
     public Test1(String test3, int test4) {
         mTest3 = test3;
         mTest4 = test4;
