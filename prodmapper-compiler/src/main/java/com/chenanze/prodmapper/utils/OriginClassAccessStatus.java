@@ -40,6 +40,10 @@ public class OriginClassAccessStatus {
         this.mElement = mElement;
     }
 
+    public String getElementName() {
+        return this.mElement.getSimpleName().toString();
+    }
+
     public ElementType getElementType() {
         return mElementType;
     }
@@ -89,7 +93,7 @@ public class OriginClassAccessStatus {
     }
 
     public boolean isAccessAble() {
-        if ((mIsGetMethodNameMatched || mIsParameterNameMatched) && mAccessStatus == AccessStatus.PUBLIC)
+        if (((mIsGetMethodNameMatched && mIsGetMethodRetrunTypeMatched) || (mIsParameterNameMatched && mIsParameterTypeMatched)) && mAccessStatus == AccessStatus.PUBLIC)
             mIsAccessAble = true;
         else
             mIsAccessAble = false;

@@ -11,7 +11,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -61,12 +60,14 @@ public class ProxyClass {
 
     private Map<String, ConstructorParameterState> mConsturctorParameterStatesMap = new LinkedHashMap<>();
     private Map<String, ConstructorParameterState> mOriginFiledsInSpuerStatesMap = new LinkedHashMap<>();
+    private Map<String, OriginClassAccessStatus> mOriginClassAccessStatusMap = new LinkedHashMap<>();
+    ;
+
 
     private LinkedListStack<Node> mLinkedListStack = new LinkedListStack<>();
 
     private String mPackageName;
     private ParameterizedTypeName mTargetArrayListClassName;
-    private List<OriginClassAccessStatus> mOriginClassAccessStatusList;
     private boolean mIsInnerClass = false;
     private TypeElement mTopParentTypeElement;
 
@@ -268,7 +269,6 @@ public class ProxyClass {
 
         List<ExecutableElement> originMethodElements = ElementFilter.methodsIn(mOriginTypeElement.getEnclosedElements());
         List<VariableElement> orginFiledElements = ElementFilter.fieldsIn(mOriginTypeElement.getEnclosedElements());
-        mOriginClassAccessStatusList = new ArrayList<>();
         for (VariableElement parameter : mConstructorElement.getParameters()) {
 //            boolean isMatched = false;
             OriginClassAccessStatus originClassAccessStatus = new OriginClassAccessStatus();
@@ -277,14 +277,27 @@ public class ProxyClass {
             for (ExecutableElement methodElement : originMethodElements) {
 
                 String constructorParameterName = getGetAttributeMethod(getMethodParameter(parameter));
+                Log.printLog("constructorParameterType: " + getParameterType(parameter));
                 Log.printLog("constructorParameterName: " + constructorParameterName + " methodElement: " + methodElement.getSimpleName() + "()");
-                if (getGetAttributeMethod(getMethodParameter(parameter)).equals(methodElement.getSimpleName() + "()")) {
 
+//                if(getParameterType(parameter).equals(""))
+
+                if (getParameterType(parameter).equals("boolean")) {
+                    Log.printLog("The type of constructorParameterName: " + constructorParameterName + " equal boolean type");
+                }
+
+                if (getGetAttributeMethod(getMethodParameter(parameter)).equals(methodElement.getSimpleName() + "()")
+                        || getIsAttributeMethod(getMethodParameter(parameter)).equals(methodElement.getSimpleName() + "()")) {
+                    if (methodElement.getReturnType().toString().equals(getParameterType(parameter))) {
+                        Log.printLog("constructorParameterType equal RetrunType ");
+                        originClassAccessStatus.setIsGetMethodRetrunTypeMatched(true);
+                    }
                     originClassAccessStatus.setElement(methodElement);
                     originClassAccessStatus.setElementType(ElementType.METHOD);
                     collectionElementModifiersInfo(originClassAccessStatus, methodElement);
                     originClassAccessStatus.setIsGetMethodNameMatched(true);
                     mConsturctorParameterStatesMap.put(parameter.getSimpleName().toString(), GET_METHOD);
+                    mOriginClassAccessStatusMap.put(parameter.getSimpleName().toString(), originClassAccessStatus);
                     break;
                 }
             }
@@ -293,14 +306,19 @@ public class ProxyClass {
             // Check the parameter of the constructor of target class if have the map fields in origin class to match it.
             // If matched, save the state to FIELDS.
             for (VariableElement orginFiledElement : orginFiledElements) {
+                Log.printLog("constructorParameterType: " + getParameterType(parameter));
                 Log.printLog("constructorParameterName: " + parameter.getSimpleName().toString() + " orginFiledElement: " + orginFiledElement.getSimpleName().toString());
                 if (parameter.getSimpleName().toString().equals(orginFiledElement.getSimpleName().toString())) {
-
+                    if (orginFiledElement.asType().toString().equals(getParameterType(parameter))) {
+                        Log.printLog("orginFiledType equal RetrunType ");
+                        originClassAccessStatus.setIsParameterTypeMatched(true);
+                    }
                     originClassAccessStatus.setElement(orginFiledElement);
                     collectionElementModifiersInfo(originClassAccessStatus, orginFiledElement);
                     originClassAccessStatus.setElementType(ElementType.PARAMETER);
                     originClassAccessStatus.setIsParameterNameMatched(true);
                     mConsturctorParameterStatesMap.put(parameter.getSimpleName().toString(), FILED);
+                    mOriginClassAccessStatusMap.put(parameter.getSimpleName().toString(), originClassAccessStatus);
                     break;
                 }
             }
@@ -318,17 +336,26 @@ public class ProxyClass {
             printThrowError("The parameter: " + constructorParameter + " of constructor " + mConstructorElement.toString() + " can not find the get method or field to match it."
                     + "\nPlease make sure the get method name or field name for constructor parameter: " + constructorParameter + " is correct");
 
-        if (originClassAccessStatus.isGetMethodNameMatched())
+        if (originClassAccessStatus.isGetMethodNameMatched() && originClassAccessStatus.isGetMethodRetrunTypeMatched())
             printThrowError("Please make sure the access of get method: " + originClassAccessStatus.getElement().getSimpleName() + " in origin class: " + mOriginTypeElement.toString() + " is public");
-        else
+        else if (!originClassAccessStatus.isGetMethodNameMatched() && originClassAccessStatus.isGetMethodRetrunTypeMatched())
             printThrowError("The parameter: " + originClassAccessStatus.getElement().getSimpleName() + " of constructor " + mConstructorElement.toString() + " can not find the Get Method to match it."
                     + "\nPlease make sure the get method name for constructor parameter: " + originClassAccessStatus.getElement().getSimpleName() + " is correct");
 
-        if (originClassAccessStatus.isIsParameterMatched())
+        if (!originClassAccessStatus.isGetMethodRetrunTypeMatched())
+            printThrowError("The type of parameter : " + originClassAccessStatus.getElement().getSimpleName() + " of constructor " + mConstructorElement.toString() + " can not find the return type of Get Method to match it."
+                    + "\nPlease make sure the get method return type for constructor parameter: " + originClassAccessStatus.getElement().getSimpleName() + " is correct");
+
+
+        if (originClassAccessStatus.isIsParameterMatched() && originClassAccessStatus.isIsParameterTypeMatched())
             printThrowError("Please make sure the access of fields: " + originClassAccessStatus.getElement().getSimpleName() + " in origin class: " + mOriginTypeElement.toString() + " is public");
-        else
+        else if (!originClassAccessStatus.isIsParameterMatched() && originClassAccessStatus.isIsParameterTypeMatched())
             printThrowError("The parameter: " + originClassAccessStatus.getElement().getSimpleName() + " of constructor " + mConstructorElement.toString() + " can not find the field to match it."
                     + "\nPlease make sure the field name for constructor parameter: " + originClassAccessStatus.getElement().getSimpleName() + " is correct");
+
+        if (!originClassAccessStatus.isIsParameterTypeMatched())
+            printThrowError("The type of parameter : " + originClassAccessStatus.getElement().getSimpleName() + " of constructor " + mConstructorElement.toString() + " can not find the type of field to match it."
+                    + "\nPlease make sure the type of filed for constructor parameter: " + originClassAccessStatus.getElement().getSimpleName() + " is correct");
 
         printThrowError("The parameter: " + originClassAccessStatus.getElement().getSimpleName() + " of constructor " + mConstructorElement.toString() + " can not find the get method or field to match it."
                 + "\nPlease make sure the get method name or field name for constructor parameter: " + originClassAccessStatus.getElement().getSimpleName() + " is correct");
@@ -423,7 +450,9 @@ public class ProxyClass {
                             parameters.append(variableName + "." + variableElement.getSimpleName() + ",\n");
                             break;
                         case GET_METHOD:
-                            parameters.append(variableName + "." + getGetAttributeMethod(getMethodParameter(variableElement)) + ",\n");
+                            OriginClassAccessStatus originClassAccessStatus = mOriginClassAccessStatusMap.get(variableElement.getSimpleName().toString());
+//                            parameters.append(variableName + "." + getGetAttributeMethod(getMethodParameter(variableElement)) + ",\n");
+                            parameters.append(variableName + "." + originClassAccessStatus.getElementName() + "(),\n");
                             break;
                     }
                 }
@@ -528,6 +557,10 @@ public class ProxyClass {
         return stringBuilder.toString();
     }
 
+    public String getParameterType(VariableElement variableElement) {
+        return variableElement.asType().toString();
+    }
+
     public String getMethodParameter(VariableElement variableElement) {
         return variableElement.getSimpleName().toString();
     }
@@ -546,6 +579,10 @@ public class ProxyClass {
 
     public String getGetAttributeMethod(String parameterName) {
         return "get" + upperCaseFirstChar(parameterName) + "()";
+    }
+
+    public String getIsAttributeMethod(String parameterName) {
+        return "is" + upperCaseFirstChar(parameterName) + "()";
     }
 
     public void setConstructorElement(ExecutableElement mConstructorElement) {

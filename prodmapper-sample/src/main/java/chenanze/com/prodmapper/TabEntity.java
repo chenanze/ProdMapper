@@ -58,7 +58,7 @@ public class TabEntity {
             private String actionMode;
             private String actionParam;
             private String id;
-            private boolean isEnable;
+            public boolean isEnable;
             private String name;
             private int orderno;
             private String project_id;
@@ -117,7 +117,7 @@ public class TabEntity {
                 this.id = id;
             }
 
-            public boolean getIsEnable() {
+            private boolean isIsEnable() {
                 return isEnable;
             }
 
