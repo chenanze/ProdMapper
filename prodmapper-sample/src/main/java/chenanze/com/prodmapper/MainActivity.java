@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
 //        Test4 test4 = (Test4) Prodmapper.transfrom(new Test4Entity(1, "1", 1, 1, false, 0.0f, 0.0d, '1'));
 
+
         List<Test3Entity.TestBean> testBeanList = new ArrayList<>();
         List<Test3Entity.TestBean.TestSubBean> testSubBeanList = new ArrayList<>();
         testSubBeanList.add(new Test3Entity.TestBean.TestSubBean("3", 3));
