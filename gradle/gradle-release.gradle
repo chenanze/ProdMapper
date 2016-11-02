@@ -19,8 +19,8 @@ apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven'
 
 // This is the library version used when deploying the artifact
-version = "1.0.0"
-//artifacts
+version = VERSION_NAME
+group = "com.chenanze"
 
 def siteUrl = 'https://github.com/chenanze/ProdMapper'      // Homepage URL of the library
 def gitUrl = 'https://github.com/chenanze/RxBusManager.git'   // Git repository URL
@@ -38,7 +38,11 @@ afterEvaluate { project ->
 //                pom.version = projectVersion
 
                 pom.project {
-                    name 'ProdMapper'
+                    groupId GROUP
+                    artifactId = project.getName()
+                    version = VERSION_NAME
+
+                    name 'ProdMapper1'
                     packaging 'aar'
                     description POM_DESCRIPTION
                     url POM_URL
@@ -104,6 +108,10 @@ afterEvaluate { project ->
                 pom.project {
 //                    name POM_NAME
                     name 'ProdMapper'
+                    groupId 'com.chenanze'
+                    artifactId = project.getName()
+                    version = '1.0.0'
+
                     packaging 'aar'
                     description POM_DESCRIPTION
                     url POM_URL
@@ -160,7 +168,6 @@ afterEvaluate { project ->
             archives sourcesJar
         }
     }
-
 
     Properties properties = new Properties()
     properties.load(project.rootProject.file('local.properties').newDataInputStream())
