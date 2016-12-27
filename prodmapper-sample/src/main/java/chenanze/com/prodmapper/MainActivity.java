@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
                                 add(new DatasBean.ProjTabBean("iconFileName11", "iconFileUrlLink11", "actionMode11", "actionParam11", "id11", false, "TestName11", 11, "11", "remark11"));
                             }}));
                 }});
-
+//        List<Tab> tabList = ProjTabBeanTab.transform(tabEntity);
         List<Tab> tabList = (List<Tab>) Prodmapper.transfroms(tabEntity, TabEntity.DatasBean.ProjTabBean.class);
 //        List<Tab> tabList = ProjTabBean__Tab$$MapperBind.transform(tabEntity);
 

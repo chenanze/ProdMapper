@@ -52,30 +52,30 @@ public class TabEntity {
         }
 
         @BindType(value = Tab.class,proxyClassName = "$O$T")
-        public static class ProjTabBean {
-            private String iconFileName;
-            private String iconFileUrlLink;
-            private String actionMode;
-            private String actionParam;
-            private String id;
-            public boolean isEnable;
-            private String name;
-            private int orderno;
-            private String project_id;
-            private String remark;
+            public static class ProjTabBean {
+                private String iconFileName;
+                private String iconFileUrlLink;
+                private String actionMode;
+                private String actionParam;
+                private String id;
+                public boolean isEnable;
+                private String name;
+                private int orderno;
+                private String project_id;
+                private String remark;
 
-            public ProjTabBean(String iconFileName, String iconFileUrlLink, String actionMode, String actionParam, String id, boolean isEnable, String name, int orderno, String project_id, String remark) {
-                this.iconFileName = iconFileName;
-                this.iconFileUrlLink = iconFileUrlLink;
-                this.actionMode = actionMode;
-                this.actionParam = actionParam;
-                this.id = id;
-                this.isEnable = isEnable;
-                this.name = name;
-                this.orderno = orderno;
-                this.project_id = project_id;
-                this.remark = remark;
-            }
+                public ProjTabBean(String iconFileName, String iconFileUrlLink, String actionMode, String actionParam, String id, boolean isEnable, String name, int orderno, String project_id, String remark) {
+                    this.iconFileName = iconFileName;
+                    this.iconFileUrlLink = iconFileUrlLink;
+                    this.actionMode = actionMode;
+                    this.actionParam = actionParam;
+                    this.id = id;
+                    this.isEnable = isEnable;
+                    this.name = name;
+                    this.orderno = orderno;
+                    this.project_id = project_id;
+                    this.remark = remark;
+                }
 
             public String getIconFileName() {
                 return iconFileName;
